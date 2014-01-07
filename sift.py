@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 
-img = cv2.imread('test-images/vungle-logo.png')
-#gray= cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-gray = img
+img = cv2.imread('test-images/CloudFlare-logo.png')
+gray= cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+gray= cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
 sift = cv2.SIFT()
 kp = sift.detect(gray, None)
