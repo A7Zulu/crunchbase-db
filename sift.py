@@ -2,13 +2,14 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 
-img1 = cv2.imread('test-images/cloudflare-michelle.jpg',0)          # queryImage
-img2 = cv2.imread('test-images/CloudFlare-logo.png',0) # trainImage
+img1 = cv2.imread('test-images/cloudera-test.jpg',0)          # queryImage
+img2 = cv2.imread('test-images/cloudera-logo.png',0) # trainImage
 
 # Initiate SIFT detector
 sift = cv2.SIFT()
 
 # find the keypoints and descriptors with SIFT
+kp1, des1 = sift.detectAndCompute(img1,None)
 kp1, des1 = sift.detectAndCompute(img1,None)
 kp2, des2 = sift.detectAndCompute(img2,None)
 
