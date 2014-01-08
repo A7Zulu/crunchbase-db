@@ -9,7 +9,13 @@ img2 = cv2.imread('test-images/workday-logo.png',0) # trainImage
 sift = cv2.SIFT()
 
 # find the keypoints and descriptors with SIFT
-kp1, des1 = sift.detectAndCompute(img1,None)
+print "trying"
+try:
+	kp1, des1 = sift.detectAndCompute(img1,None)
+except Exception:
+	pass
+
+print "outside"
 kp1, des1 = sift.detectAndCompute(img1,None)
 kp2, des2 = sift.detectAndCompute(img2,None)
 
