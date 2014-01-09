@@ -36,6 +36,8 @@ class crunchbase:
 		fd = urllib.urlopen(imageURL)
 		image_file = io.BytesIO(fd.read())	
 		im = Image.open(image_file)
-
-		return im
+		output = io.BytesIO()
+		im.save(output, format=im.format)
+	
+		return output
 
