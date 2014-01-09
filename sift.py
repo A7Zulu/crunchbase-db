@@ -1,46 +1,85 @@
 import numpy as np
 import cv2
+import redis
 from matplotlib import pyplot as plt
 
-img1 = cv2.imread('test-images/workday-test.jpg',0)          # queryImage
-img2 = cv2.imread('test-images/workday-logo.png',0) # trainImage
 
-# Initiate SIFT detector
-sift = cv2.SIFT()
+def test():
+	r = redis.StrictRedis(host='192.168.1.109', port=6379, db=0)
 
-# find the keypoints and descriptors with SIFT
-print "trying"
-try:
+	nparr = np.fromstring(r.hget("/company/brightroll", "image"), np.uint8)
+	img1 = cv2.imdecode(nparr, 0)
+	#img1 = cv2.imread('test-images/workday-test.jpg',0) # queryImage
+	img2 = cv2.imread('test-images/workday-logo.png',0) # trainImage
+
+	# Initiate SIFT detector
+	sift = cv2.SIFT()
+
+	# find the keypoints and descriptors with SIFT
+	print "trying"
+	try:
+		kp1, des1 = sift.detectAndCompute(img1,None)
+	except Exception:
+		pass
+	
+	print "outside"
 	kp1, des1 = sift.detectAndCompute(img1,None)
-except Exception:
-	pass
+	kp2, des2 = sift.detectAndCompute(img2,None)
+	
+	print kp1
+	print des1
+	
 
-print "outside"
-kp1, des1 = sift.detectAndCompute(img1,None)
-kp2, des2 = sift.detectAndCompute(img2,None)
 
-# FLANN parameters
-FLANN_INDEX_KDTREE = 0
-index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-search_params = dict(checks=50)   # or pass empty dictionary
+def compute():
 
-flann = cv2.FlannBasedMatcher(index_params,search_params)
+	img1 = cv2.imread('test-images/workday-test.jpg',0) # queryImage
+	img2 = cv2.imread('test-images/workday-logo.png',0) # trainImage
 
-matches = flann.knnMatch(des1,des2,k=2)
+	# Initiate SIFT detector
+	sift = cv2.SIFT()
 
-# Need to draw only good matches, so create a mask
-matchesMask = [[0,0] for i in xrange(len(matches))]
+	# find the keypoints and descriptors with SIFT
+	print "trying"
+	try:
+		kp1, des1 = sift.detectAndCompute(img1,None)
+	except Exception:
+		pass
 
-# ratio test as per Lowe's paper
-for i,(m,n) in enumerate(matches):
-    if m.distance < 0.7*n.distance:
-        matchesMask[i]=[1,0]
+	print "outside"
+	kp1, des1 = sift.detectAndCompute(img1,None)
+	kp2, des2 = sift.detectAndCompute(img2,None)
 
-draw_params = dict(matchColor = (0,255,0),
-                   singlePointColor = (255,0,0),
-                   matchesMask = matchesMask,
-                   flags = 0)
+	# FLANN parameters
+	FLANN_INDEX_KDTREE = 0
+	index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+	search_params = dict(checks=50)   # or pass empty dictionary
 
-img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,matches,None,**draw_params)
+	flann = cv2.FlannBasedMatcher(index_params,search_params)
 
-cv2.imwrite('sift_keypoints.jpg',img3)
+	matches = flann.knnMatch(des1,des2,k=2)
+
+	# Need to draw only good matches, so create a mask
+	matchesMask = [[0,0] for i in xrange(len(matches))]
+
+	# ratio test as per Lowe's paper
+	for i,(m,n) in enumerate(matches):
+	    if m.distance < 0.7*n.distance:
+	        matchesMask[i]=[1,0]
+
+	draw_params = dict(matchColor = (0,255,0),
+	                   singlePointColor = (255,0,0),
+	                   matchesMask = matchesMask,
+	                   flags = 0)
+
+	img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,matches,None,**draw_params)
+
+	cv2.imwrite('sift_keypoints.jpg',img3)
+
+def main():
+	test()
+	#compute()
+
+
+if __name__ == '__main__':
+	main()
