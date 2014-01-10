@@ -23,7 +23,7 @@ class crunchbase:
 			return r.json()
 		else:
 			s = "HTTP code " + str(r.status_code)
-			raise NetworkError(s)
+			raise Exception(s)
 
 	def getImageURL(self, json):
 		# Retrieves the name of the largest image from the JSON and creates an URL string for where image is located
@@ -37,7 +37,7 @@ class crunchbase:
 		image_file = io.BytesIO(fd.read())	
 		im = Image.open(image_file)
 		output = io.BytesIO()
-		im.save(output, format=im.format)
+		im.save(output, "PNG")
 	
 		return output
 
