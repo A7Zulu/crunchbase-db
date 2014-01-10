@@ -13,20 +13,17 @@ def init():
 		pass
 
 
-
 def brutesearch(img):
 	r = redis.StrictRedis(host='192.168.1.109', port=6379, db=0)
 	sift = cv2.SIFT()
 	keys = r.keys("*")
 	count = 0
 	
-	kp1, des1 = sift.detectAndCompute(img, None) #Query image
-
-
+	kp2, des2 = sift.detectAndCompute(img, None) #Query image
 
 	for key in keys:
 		if r.hexists(key, "descriptors"):
-			des2 = r.hget(key, "descriptors")
+			des1 = np.asanyarray(r.hget(key, "descriptors"))
 			if match(des1, des2):
 				print "Match found for %s" % (key)
 				return
@@ -60,21 +57,18 @@ def test():
 	r = redis.StrictRedis(host='192.168.1.109', port=6379, db=0)
 
 	nparr = np.fromstring(r.hget("/company/amazon", "image"), np.uint8)
-	img2 = cv2.imdecode(nparr, 0)
-	#img1 = cv2.imread('test-images/workday-test.jpg',0) # queryImage
-	img1 = cv2.imread('test-images/amazon-test.jpg',0) # trainImage
+	img2 = cv2.imdecode(nparr, 0) #trainImage
+	img1 = cv2.imread('test-images/amazon-test.jpg',0) # queryImage
 
 	# Initiate SIFT detector
 	sift = cv2.SIFT()
 
 	# find the keypoints and descriptors with SIFT
-	try:
-		kp1, des1 = sift.detectAndCompute(img1,None)
-	except Exception:
-		pass
-	
 	kp1, des1 = sift.detectAndCompute(img1,None)
 	kp2, des2 = sift.detectAndCompute(img2,None)
+
+	print type(des1)
+	print type(des2)
 	
 	# FLANN parameters
 	FLANN_INDEX_KDTREE = 0
@@ -89,9 +83,16 @@ def test():
 	matchesMask = [[0,0] for i in xrange(len(matches))]
 
 	# ratio test as per Lowe's paper
+	good = 0
 	for i,(m,n) in enumerate(matches):
 	    if m.distance < 0.7*n.distance:
 	        matchesMask[i]=[1,0]
+		good += 1
+
+	if good>10:
+		print "Match"
+	else:
+		print "Not a match"
 
 	draw_params = dict(matchColor = (0,255,0),
 	                   singlePointColor = (255,0,0),
@@ -100,12 +101,17 @@ def test():
 
 	img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,matches,None,**draw_params)
 
-	cv2.imwrite('sift_keypoints.jpg',img3)
+	#cv2.imwrite('sift_keypoints.jpg',img3)
 	
 
 
 def match(des1, des2):
 	MIN_MATCH_COUNT = 10
+
+	print des1
+	print des2
+	print type(des1)
+	print type(des2)
 
 	# FLANN parameters
 	FLANN_INDEX_KDTREE = 0
@@ -113,9 +119,7 @@ def match(des1, des2):
 	search_params = dict(checks=50)   # or pass empty dictionary
 
 	flann = cv2.FlannBasedMatcher(index_params,search_params)
-
-	matches = flann.knnMatch(des1,des2,k=2)
-
+	matches = flann.knnMatch(des1, des2, k=2)
 	
 	good = 0
 	for m,n in matches:
@@ -146,8 +150,10 @@ def match(des1, des2):
 
 def main():
 	init()
-	computeKeyPoints()
 	#test()
+	#img1 = cv2.imread('test-images/amazon-test.jpg',0)
+	#brutesearch(img1)
+	computeKeyPoints()
 	#compute()
 
 
