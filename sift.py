@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import redis
 from matplotlib import pyplot as plt
-
+import io
 
 # Stupid function because OpenCL library is broken
 def init():
@@ -23,10 +23,11 @@ def brutesearch(img):
 
 	for key in keys:
 		if r.hexists(key, "descriptors"):
-			des1 = np.asanyarray(r.hget(key, "descriptors"))
+			des1 = np.load(r.hget(key, "descriptors"))
 			if match(des1, des2):
 				print "Match found for %s" % (key)
-				return
+				#return
+				continue
 
 
 # Compute Keypoints for the Database
@@ -66,9 +67,25 @@ def test():
 	# find the keypoints and descriptors with SIFT
 	kp1, des1 = sift.detectAndCompute(img1,None)
 	kp2, des2 = sift.detectAndCompute(img2,None)
-
+	
+	output = io.BytesIO()
+	np.save(output, des2)
+	r.hset("/company/amazon", "descriptors", output.getvalue())
+	des3 = r.hget("/company/amazon", "descriptors")
+	des3 = np.fromstring(des3)
+	
+	print des1
 	print type(des1)
-	print type(des2)
+	print des1.dtype
+	print des1.shape
+	print des1.size
+	print ""
+	print des3
+	print type(des3)
+	print des3.dtype
+	print des3.shape
+	print des3.size
+
 	
 	# FLANN parameters
 	FLANN_INDEX_KDTREE = 0
@@ -90,6 +107,7 @@ def test():
 		good += 1
 
 	if good>10:
+		print good
 		print "Match"
 	else:
 		print "Not a match"
@@ -108,11 +126,6 @@ def test():
 def match(des1, des2):
 	MIN_MATCH_COUNT = 10
 
-	print des1
-	print des2
-	print type(des1)
-	print type(des2)
-
 	# FLANN parameters
 	FLANN_INDEX_KDTREE = 0
 	index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
@@ -127,6 +140,7 @@ def match(des1, des2):
 		        good += 1
 
 	if good>MIN_MATCH_COUNT:
+		print good
 		return True
 	else:
 		return False 
@@ -150,10 +164,10 @@ def match(des1, des2):
 
 def main():
 	init()
-	#test()
-	#img1 = cv2.imread('test-images/amazon-test.jpg',0)
+	test()
+	img1 = cv2.imread('test-images/amazon-test.jpg',0)
 	#brutesearch(img1)
-	computeKeyPoints()
+	#computeKeyPoints()
 	#compute()
 
 
