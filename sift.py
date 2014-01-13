@@ -3,6 +3,7 @@ import cv2
 import redis
 from matplotlib import pyplot as plt
 import io
+import pickle
 
 # Stupid function because OpenCL library is broken
 def init():
@@ -39,12 +40,12 @@ def computeKeyPoints():
 
 	print "Starting to compute keypoints and descriptors\n"
 	for key in keys:
-		if not r.hexists(key, "descriptors"):
+		#if not r.hexists(key, "descriptors"):
 			nparr = np.fromstring(r.hget(key, "image"), np.uint8)
 			img = cv2.imdecode(nparr, 0)
 			try:
 				kp, des = sift.detectAndCompute(img, None)
-				r.hset(key, "descriptors", des)
+				r.hset(key, "descriptors", pickle.dumps(des))
 				print "Descriptors computed for %s" % (key)
 				count += 1		
 			except:
@@ -68,17 +69,15 @@ def test():
 	kp1, des1 = sift.detectAndCompute(img1,None)
 	kp2, des2 = sift.detectAndCompute(img2,None)
 	
-	output = io.BytesIO()
-	np.save(output, des2)
-	r.hset("/company/amazon", "descriptors", output.getvalue())
-	des3 = r.hget("/company/amazon", "descriptors")
-	des3 = np.fromstring(des3)
+	des_string = pickle.dumps(des2)
+	r.hset("/company/amazon", "descriptors", des_string)
+	des3 = pickle.loads(r.hget("/company/amazon", "descriptors"))
 	
-	print des1
-	print type(des1)
-	print des1.dtype
-	print des1.shape
-	print des1.size
+	print des2
+	print type(des2)
+	print des2.dtype
+	print des2.shape
+	print des2.size
 	print ""
 	print des3
 	print type(des3)
@@ -94,7 +93,7 @@ def test():
 
 	flann = cv2.FlannBasedMatcher(index_params,search_params)
 
-	matches = flann.knnMatch(des1,des2,k=2)
+	matches = flann.knnMatch(des1,des3,k=2)
 
 	# Need to draw only good matches, so create a mask
 	matchesMask = [[0,0] for i in xrange(len(matches))]
@@ -164,10 +163,10 @@ def match(des1, des2):
 
 def main():
 	init()
-	test()
-	img1 = cv2.imread('test-images/amazon-test.jpg',0)
+	#test()
+	#img1 = cv2.imread('test-images/amazon-test.jpg',0)
 	#brutesearch(img1)
-	#computeKeyPoints()
+	computeKeyPoints()
 	#compute()
 
 
